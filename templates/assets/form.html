@@ -44,6 +44,7 @@
     <form method="POST" 
           action="{% if form_action == 'edit' %}{{ url_for('asset_edit', asset_id=asset['asset_id']) }}{% else %}{{ url_for('asset_create') }}{% endif %}" 
           id="asset-form">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
       
       <div class="form-grid">
         <!-- 1. Asset ID -->
@@ -62,7 +63,7 @@
                  title="Letters, numbers, dashes and underscores only.">
           <span class="form-hint">
             {% if form_action == 'edit' %}
-              Asset ID is permanent to maintain historical audit integrity.
+              Asset ID cannot be changed after creation.
             {% else %}
               Unique enterprise identifier (Auto-suggested next ID).
             {% endif %}
