@@ -86,12 +86,13 @@
       <div class="modal-body">
         <p>Are you sure you want to permanently delete asset <strong id="modalAssetId">AST-XXXX</strong> (<span id="modalAssetName">Device Name</span>)?</p>
         <p style="margin-top: 10px; color: #dc2626; font-size: 0.85rem; font-weight: 500;">
-          ⚠️ This action cannot be reversed. The record will be permanently removed from inventory audits.
+          ⚠️ This action cannot be reversed. The asset record will be permanently removed.
         </p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
         <form id="modalDeleteForm" method="POST" action="" style="display: inline;">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-danger" id="modalConfirmDeleteBtn">Yes, Delete Asset</button>
         </form>
       </div>

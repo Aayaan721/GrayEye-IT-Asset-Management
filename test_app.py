@@ -1,22 +1,38 @@
-"""
-Automated Comprehensive Test Suite for Grayeye IT Asset Management System.
-Validates all features, routes, CRUD operations, edge cases, server-side validations,
-and database persistence.
-"""
+"""Tests for asset routes, validation, CRUD, and SQLite persistence."""
 
 import unittest
 import sqlite3
 import os
+import tempfile
 from app import app
 import database
 
 class TestAssetManagementSystem(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls._original_db_path = database.DB_PATH
+        cls._temp_dir = tempfile.TemporaryDirectory()
+        database.DB_PATH = os.path.join(cls._temp_dir.name, "test_assets.db")
+        database.init_db()
+
+    @classmethod
+    def tearDownClass(cls):
+        database.DB_PATH = cls._original_db_path
+        cls._temp_dir.cleanup()
+
     def setUp(self):
-        # Configure test client
         app.config["TESTING"] = True
-        app.config["WTF_CSRF_ENABLED"] = False
+        app.config["CSRF_ENABLED"] = True
         self.client = app.test_client()
+
+    def post_with_csrf(self, path, **kwargs):
+        self.client.get("/dashboard")  # Initialize the session token.
+        with self.client.session_transaction() as sess:
+            token = sess["_csrf_token"]
+        data = dict(kwargs.pop("data", {}) or {})
+        data["_csrf_token"] = token
+        return self.client.post(path, data=data, **kwargs)
 
     def test_01_dashboard_route(self):
         """Verify dashboard loads with 200 and displays summary data."""
@@ -97,7 +113,7 @@ class TestAssetManagementSystem(unittest.TestCase):
     def test_09_add_asset_validation_failures(self):
         """Verify server-side validation catches invalid inputs."""
         # 1. Missing required name
-        res1 = self.client.post("/assets/new", data={
+        res1 = self.post_with_csrf("/assets/new", data={
             "asset_id": "TEST-001",
             "name": "",
             "category": "Laptops",
@@ -107,7 +123,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn("Asset Name is required", res1.data.decode("utf-8"))
 
         # 2. Negative purchase cost
-        res2 = self.client.post("/assets/new", data={
+        res2 = self.post_with_csrf("/assets/new", data={
             "asset_id": "TEST-002",
             "name": "Test Laptop",
             "category": "Laptops",
@@ -118,7 +134,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn("Purchase cost cannot be negative", res2.data.decode("utf-8"))
 
         # 3. Duplicate asset ID
-        res3 = self.client.post("/assets/new", data={
+        res3 = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST-1001",  # Already exists
             "name": "Duplicate Asset",
             "category": "Laptops",
@@ -128,7 +144,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn("already exists", res3.data.decode("utf-8"))
 
         # 4. Assigned status without employee
-        res4 = self.client.post("/assets/new", data={
+        res4 = self.post_with_csrf("/assets/new", data={
             "asset_id": "TEST-004",
             "name": "Assigned Laptop",
             "category": "Laptops",
@@ -143,7 +159,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         test_id = "AST-9999"
         
         # 1. CREATE
-        create_res = self.client.post("/assets/new", data={
+        create_res = self.post_with_csrf("/assets/new", data={
             "asset_id": test_id,
             "name": "Autonomous Testing Drone",
             "category": "Other",
@@ -170,7 +186,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn("Jordan Lee", detail_content)
 
         # 3. UPDATE
-        edit_res = self.client.post(f"/assets/{test_id}/edit", data={
+        edit_res = self.post_with_csrf(f"/assets/{test_id}/edit", data={
             "name": "Autonomous Testing Drone v2 (Updated)",
             "category": "Other",
             "brand": "Grayeye Tech",
@@ -195,7 +211,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn("Confirm Permanent Asset Deletion", confirm_res.data.decode("utf-8"))
 
         # 5. DELETE EXECUTION (POST)
-        delete_res = self.client.post(f"/assets/{test_id}/delete", follow_redirects=True)
+        delete_res = self.post_with_csrf(f"/assets/{test_id}/delete", follow_redirects=True)
         self.assertEqual(delete_res.status_code, 200)
         delete_content = delete_res.data.decode("utf-8")
         self.assertIn("was permanently deleted", delete_content)
@@ -218,7 +234,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         """Verify that data written to SQLite persists across new connections."""
         test_id = "AST-7777"
         # Insert via client
-        self.client.post("/assets/new", data={
+        self.post_with_csrf("/assets/new", data={
             "asset_id": test_id,
             "name": "Persistence Verification Server",
             "category": "Servers",
@@ -260,7 +276,7 @@ class TestAssetManagementSystem(unittest.TestCase):
     def test_14_regex_and_length_validation(self):
         """Verify regex and length boundaries on Asset ID and Name."""
         # Invalid characters in Asset ID
-        res_invalid_id = self.client.post("/assets/new", data={
+        res_invalid_id = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST@INVALID#99",
             "name": "Invalid Tag Asset",
             "category": "Laptops",
@@ -270,7 +286,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn("Asset ID may only contain letters", res_invalid_id.data.decode("utf-8"))
 
         # Excessively long name (> 150 chars)
-        res_long_name = self.client.post("/assets/new", data={
+        res_long_name = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST-VALID-1",
             "name": "A" * 155,
             "category": "Laptops",
@@ -281,7 +297,7 @@ class TestAssetManagementSystem(unittest.TestCase):
 
     def test_15_form_preserves_input_on_error(self):
         """Verify user form inputs are preserved when validation fails."""
-        res = self.client.post("/assets/new", data={
+        res = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST-RETAIN-TEST",
             "name": "",  # Trigger validation error
             "brand": "Retained Brand Name",
@@ -322,7 +338,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         test_tag = "AST-CONSIST-01"
 
         # 1. CREATE an Available asset with cost 1000.00
-        self.client.post("/assets/new", data={
+        self.post_with_csrf("/assets/new", data={
             "asset_id": test_tag,
             "name": "Consistency Testing Laptop",
             "category": "Laptops",
@@ -347,7 +363,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         self.assertIn(str(n_initial + 1), res_dash.data.decode("utf-8"))
 
         # 2. UPDATE: Change to Assigned, cost 1500.00
-        self.client.post(f"/assets/{test_tag}/edit", data={
+        self.post_with_csrf(f"/assets/{test_tag}/edit", data={
             "name": "Consistency Testing Laptop (Updated)",
             "category": "Laptops",
             "brand": "Lenovo",
@@ -370,7 +386,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         conn.close()
 
         # 3. DELETE asset
-        self.client.post(f"/assets/{test_tag}/delete", follow_redirects=True)
+        self.post_with_csrf(f"/assets/{test_tag}/delete", follow_redirects=True)
 
         conn = database.get_db_connection()
         c = conn.cursor()
@@ -386,7 +402,7 @@ class TestAssetManagementSystem(unittest.TestCase):
 
     def test_18_invalid_category_and_status(self):
         """Verify invalid category and status values are rejected."""
-        res_cat = self.client.post("/assets/new", data={
+        res_cat = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST-BAD-CAT",
             "name": "Bad Category Asset",
             "category": "InvalidCategory123",
@@ -395,7 +411,7 @@ class TestAssetManagementSystem(unittest.TestCase):
         }, follow_redirects=True)
         self.assertIn("Please select a valid category", res_cat.data.decode("utf-8"))
 
-        res_st = self.client.post("/assets/new", data={
+        res_st = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST-BAD-ST",
             "name": "Bad Status Asset",
             "category": "Laptops",
@@ -406,7 +422,7 @@ class TestAssetManagementSystem(unittest.TestCase):
 
     def test_19_invalid_date_format(self):
         """Verify malformed purchase date formats are rejected."""
-        res = self.client.post("/assets/new", data={
+        res = self.post_with_csrf("/assets/new", data={
             "asset_id": "AST-BAD-DATE",
             "name": "Bad Date Asset",
             "category": "Laptops",
@@ -415,6 +431,19 @@ class TestAssetManagementSystem(unittest.TestCase):
             "purchase_date": "15-01-2024"  # DD-MM-YYYY instead of YYYY-MM-DD
         }, follow_redirects=True)
         self.assertIn("Purchase date must be in YYYY-MM-DD format", res.data.decode("utf-8"))
+
+    def test_21_csrf_rejects_missing_and_invalid_tokens(self):
+        self.client.get("/assets/new")
+        post_data = {"asset_id": "AST-CSRF-CHECK", "name": "CSRF check"}
+        missing = self.client.post("/assets/new", data=post_data)
+        self.assertEqual(missing.status_code, 400)
+        invalid = self.client.post("/assets/new", data={**post_data, "_csrf_token": "invalid"})
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_22_csrf_protects_delete_route(self):
+        self.client.get("/dashboard")
+        missing = self.client.post("/assets/AST-1001/delete")
+        self.assertEqual(missing.status_code, 400)
 
     def test_20_search_empty_and_special_chars(self):
         """Verify search with non-matching strings and special characters handles gracefully."""

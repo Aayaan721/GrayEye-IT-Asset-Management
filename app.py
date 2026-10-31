@@ -1,16 +1,7 @@
-"""
-Grayeye IT Asset Management System
-Main Flask Application
-
-Architecture Note (for CSE students):
-This application follows the MVC (Model-View-Controller) design pattern:
-- Model: SQLite database managed via database.py with parameterized queries.
-- View: Jinja2 templates (HTML + CSS + vanilla JS) in the /templates and /static directories.
-- Controller: Flask route handlers defined in this file which parse HTTP requests,
-  validate input, interact with the model, and render views or redirect.
-"""
+"""Flask routes and input validation for the GrayEye asset inventory application."""
 
 import os
+import secrets
 import csv
 import io
 import re
@@ -24,7 +15,8 @@ from flask import (
     url_for,
     flash,
     abort,
-    Response
+    Response,
+    session
 )
 
 import database
@@ -37,8 +29,30 @@ from database import (
 )
 
 app = Flask(__name__)
-# Secure secret key for session management and flash messages
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "grayeye-it-asset-mgmt-secret-key-2026")
+# Set SECRET_KEY in the environment when deploying the application.
+# A random per-process key is sufficient for local development but resets sessions on restart.
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+app.config["CSRF_ENABLED"] = True
+
+
+@app.context_processor
+def inject_csrf_token():
+    def csrf_token():
+        if "_csrf_token" not in session:
+            session["_csrf_token"] = secrets.token_urlsafe(32)
+        return session["_csrf_token"]
+    return {"csrf_token": csrf_token}
+
+
+@app.before_request
+def check_csrf():
+    """Reject POST forms without the matching session token."""
+    if request.method == "POST" and app.config.get("CSRF_ENABLED", True):
+        expected = session.get("_csrf_token", "")
+        supplied = request.form.get("_csrf_token", "")
+        if not expected or not supplied or not secrets.compare_digest(expected, supplied):
+            abort(400, description="Invalid or missing form security token.")
+
 
 
 @app.context_processor
@@ -422,7 +436,7 @@ def asset_detail(asset_id):
 def asset_edit(asset_id):
     """
     Renders edit form (GET) and processes updates (POST).
-    Asset ID remains read-only to preserve identity integrity across audit records.
+    Asset ID remains read-only so existing asset links stay valid.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -569,7 +583,7 @@ def asset_delete(asset_id):
 def export_csv():
     """
     Exports current asset inventory as a downloadable CSV spreadsheet.
-    Useful utility for IT audits and executive reporting.
+    Export current asset inventory to CSV.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -640,4 +654,4 @@ with app.app_context():
 if __name__ == "__main__":
     # Ensure database tables exist before serving traffic
     init_db()
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG", "0") == "1")
