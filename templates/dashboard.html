@@ -19,21 +19,21 @@
   <!-- Available -->
   <a href="{{ url_for('asset_list', status='Available') }}" class="stat-card available" id="stat-available-assets">
     <span class="stat-label">Available</span>
-    <span class="stat-value" style="color: #059669;">{{ status_counts.get('Available', 0) }}</span>
+    <span class="stat-value" >{{ status_counts.get('Available', 0) }}</span>
     <span class="stat-sub">Ready for assignment</span>
   </a>
 
   <!-- Assigned -->
   <a href="{{ url_for('asset_list', status='Assigned') }}" class="stat-card assigned" id="stat-assigned-assets">
     <span class="stat-label">Assigned</span>
-    <span class="stat-value" style="color: #2563eb;">{{ status_counts.get('Assigned', 0) }}</span>
+    <span class="stat-value" >{{ status_counts.get('Assigned', 0) }}</span>
     <span class="stat-sub">In active staff usage</span>
   </a>
 
   <!-- Under Maintenance -->
   <a href="{{ url_for('asset_list', status='Under Maintenance') }}" class="stat-card maint" id="stat-maint-assets">
     <span class="stat-label">Maintenance</span>
-    <span class="stat-value" style="color: #d97706;">{{ status_counts.get('Under Maintenance', 0) }}</span>
+    <span class="stat-value" >{{ status_counts.get('Under Maintenance', 0) }}</span>
     <span class="stat-sub">Repairs & inspections</span>
   </a>
 
