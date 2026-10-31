@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Inventory &bull; Grayeye IT Asset Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Hardware Inventory</h1>
+</div>
+
+<!-- Search & Multi-Filter Bar -->
+<section class="filter-bar" aria-label="Inventory Filters">
+  <form method="GET" action="{{ url_for('asset_list') }}" class="filter-form" id="inventory-filter-form">
+    <!-- Search Query Input -->
+    <div class="filter-input-wrap">
+      <input type="text" 
+             name="q" 
+             value="{{ search_query }}" 
+             placeholder="Search ID, name, brand, serial, assignee..." 
+             class="form-control"
+             id="search-input"
+             autocomplete="off">
+    </div>
+
+    <!-- Status Filter -->
+    <div class="filter-select-wrap">
+      <select name="status" class="form-select" id="filter-status" aria-label="Filter by Status">
+        <option value="">All Statuses</option>
+        {% for st in valid_statuses %}
+          <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="filter-select-wrap">
+      <select name="category" class="form-select" id="filter-category" aria-label="Filter by Category">
+        <option value="">All Categories</option>
+        {% for cat in valid_categories %}
+          <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Department Filter -->
+    <div class="filter-select-wrap">
+      <select name="department" class="form-select" id="filter-department" aria-label="Filter by Department">
+        <option value="">All Departments</option>
+        {% for dept in valid_departments %}
+          <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Retain existing sort params when filtering -->
+    <input type="hidden" name="sort" value="{{ sort_by }}">
+    <input type="hidden" name="order" value="{{ sort_order }}">
+
+    <!-- Filter Action Buttons -->
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary" id="btn-apply-filters">Filter</button>
+      {% if filters_applied %}
+        <a href="{{ url_for('asset_list') }}" class="btn btn-secondary" id="btn-clear-filters" title="Reset all filters">Reset</a>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<!-- Results Header & Counter -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+  <span style="font-size: 0.9rem; color: #64748b; font-weight: 500;">
+    Showing <strong>{{ total_results }}</strong> {{ 'asset' if total_results == 1 else 'assets' }}
+    {% if filters_applied %}
+      <span style="color: #2563eb;">(filtered)</span>
+    {% endif %}
+  </span>
+
+  <div style="font-size: 0.82rem; color: #64748b;">
+    Tip: Click column headers to sort
+  </div>
+</div>
+
+<!-- Main Inventory Table -->
+<div class="table-responsive">
+  {% if assets %}
+    <table class="data-table" id="asset-inventory-table">
+      <thead>
+        <tr>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='asset_id', order='desc' if sort_by == 'asset_id' and sort_order == 'asc' else 'asc') }}">
+              Asset ID {% if sort_by == 'asset_id' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='name', order='desc' if sort_by == 'name' and sort_order == 'asc' else 'asc') }}">
+              Asset Name & Brand {% if sort_by == 'name' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='category', order='desc' if sort_by == 'category' and sort_order == 'asc' else 'asc') }}">
+              Category {% if sort_by == 'category' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='serial_number', order='desc' if sort_by == 'serial_number' and sort_order == 'asc' else 'asc') }}">
+              Serial Number {% if sort_by == 'serial_number' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='assigned_to', order='desc' if sort_by == 'assigned_to' and sort_order == 'asc' else 'asc') }}">
+              Assigned Assignee & Dept {% if sort_by == 'assigned_to' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='purchase_cost', order='desc' if sort_by == 'purchase_cost' and sort_order == 'asc' else 'asc') }}">
+              Cost {% if sort_by == 'purchase_cost' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th>
+            <a href="{{ url_for('asset_list', q=search_query, status=selected_status, category=selected_category, department=selected_department, sort='status', order='desc' if sort_by == 'status' and sort_order == 'asc' else 'asc') }}">
+              Status {% if sort_by == 'status' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+            </a>
+          </th>
+          <th style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for asset in assets %}
+          <tr id="row-{{ asset['asset_id'] }}">
+            <!-- Asset ID -->
+            <td>
+              <a href="{{ url_for('asset_detail', asset_id=asset['asset_id']) }}" 
+                 class="badge badge-id" 
+                 title="View asset {{ asset['asset_id'] }}">
+                {{ asset['asset_id'] }}
+              </a>
+            </td>
+
+            <!-- Name and Brand -->
+            <td>
+              <div style="font-weight: 600; color: #0f172a;">{{ asset['name'] }}</div>
+              <div style="font-size: 0.8rem; color: #64748b;">{{ asset['brand'] }}</div>
+            </td>
+
+            <!-- Category -->
+            <td>
+              <span class="badge badge-category">{{ asset['category'] }}</span>
+            </td>
+
+            <!-- Serial Number -->
+            <td>
+              <code style="font-size: 0.82rem; color: #475569;">{{ asset['serial_number'] or '—' }}</code>
+            </td>
+
+            <!-- Assignee & Department -->
+            <td>
+              {% if asset['assigned_to'] %}
+                <div style="font-weight: 500;">{{ asset['assigned_to'] }}</div>
+                <div style="font-size: 0.78rem; color: #64748b;">{{ asset['department'] or 'Unassigned' }}</div>
+              {% else %}
+                <span style="color: #94a3b8; font-style: italic;">In Storage / Unassigned</span>
+              {% endif %}
+            </td>
+
+            <!-- Purchase Cost -->
+            <td style="font-weight: 600;">
+              ${{ "{:,.2f}".format(asset['purchase_cost'] or 0.0) }}
+            </td>
+
+            <!-- Status Badge -->
+            <td>
+              {% set status_class = asset['status']|lower|replace(' ', '-') %}
+              <span class="badge badge-{{ status_class }}">{{ asset['status'] }}</span>
+            </td>
+
+            <!-- Action buttons -->
+            <td style="text-align: right;">
+              <div class="table-row-actions" style="justify-content: flex-end;">
+                <a href="{{ url_for('asset_detail', asset_id=asset['asset_id']) }}" 
+                   class="action-link" 
+                   title="View details"
+                   id="btn-view-{{ asset['asset_id'] }}">
+                  View
+                </a>
+                <a href="{{ url_for('asset_edit', asset_id=asset['asset_id']) }}" 
+                   class="action-link" 
+                   title="Edit asset"
+                   id="btn-edit-{{ asset['asset_id'] }}">
+                  Edit
+                </a>
+                <a href="{{ url_for('asset_delete', asset_id=asset['asset_id']) }}" 
+                   class="action-link delete" 
+                   data-delete-trigger="true" 
+                   data-asset-id="{{ asset['asset_id'] }}" 
+                   data-asset-name="{{ asset['name'] }}"
+                   title="Delete asset"
+                   id="btn-delete-{{ asset['asset_id'] }}"
+                   style="cursor: pointer;">
+                  Delete
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3 class="empty-title">No assets found</h3>
+      <p style="margin-bottom: 16px;">We couldn't find any hardware assets matching your current search or filter criteria.</p>
+      {% if filters_applied %}
+        <a href="{{ url_for('asset_list') }}" class="btn btn-secondary">Clear All Filters</a>
+      {% else %}
+        <a href="{{ url_for('asset_create') }}" class="btn btn-primary">+ Register First Asset</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

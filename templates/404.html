@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Page or Asset Not Found &bull; Grayeye IT Asset Management{% endblock %}
+
+{% block content %}
+<div style="max-width: 540px; margin: 60px auto; text-align: center;">
+  <div class="card" style="padding: 36px 24px;">
+    <div style="font-size: 3.5rem; margin-bottom: 12px;">🔍</div>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">
+      Resource Not Found
+    </h1>
+    <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 24px;">
+      {{ message or "The asset or page you requested could not be located in Grayeye IT system." }}
+    </p>
+
+    <div style="display: flex; justify-content: center; gap: 12px;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+        Go to Dashboard
+      </a>
+      <a href="{{ url_for('asset_list') }}" class="btn btn-secondary">
+        Browse Inventory
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard &bull; Grayeye IT Asset Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Operations Dashboard</h1>
+</div>
+
+<!-- Key Stat Metric Cards -->
+<section class="stats-grid" aria-label="Key Asset Metrics">
+  <!-- Total Assets -->
+  <a href="{{ url_for('asset_list') }}" class="stat-card total" id="stat-total-assets">
+    <span class="stat-label">Total Assets</span>
+    <span class="stat-value">{{ total_assets }}</span>
+    <span class="stat-sub">Tracked in database</span>
+  </a>
+
+  <!-- Available -->
+  <a href="{{ url_for('asset_list', status='Available') }}" class="stat-card available" id="stat-available-assets">
+    <span class="stat-label">Available</span>
+    <span class="stat-value" style="color: #059669;">{{ status_counts.get('Available', 0) }}</span>
+    <span class="stat-sub">Ready for assignment</span>
+  </a>
+
+  <!-- Assigned -->
+  <a href="{{ url_for('asset_list', status='Assigned') }}" class="stat-card assigned" id="stat-assigned-assets">
+    <span class="stat-label">Assigned</span>
+    <span class="stat-value" style="color: #2563eb;">{{ status_counts.get('Assigned', 0) }}</span>
+    <span class="stat-sub">In active staff usage</span>
+  </a>
+
+  <!-- Under Maintenance -->
+  <a href="{{ url_for('asset_list', status='Under Maintenance') }}" class="stat-card maint" id="stat-maint-assets">
+    <span class="stat-label">Maintenance</span>
+    <span class="stat-value" style="color: #d97706;">{{ status_counts.get('Under Maintenance', 0) }}</span>
+    <span class="stat-sub">Repairs & inspections</span>
+  </a>
+
+  <!-- Retired -->
+  <a href="{{ url_for('asset_list', status='Retired') }}" class="stat-card retired" id="stat-retired-assets">
+    <span class="stat-label">Retired</span>
+    <span class="stat-value" style="color: #475569;">{{ status_counts.get('Retired', 0) }}</span>
+    <span class="stat-sub">Decommissioned items</span>
+  </a>
+
+  <!-- Total Asset Value -->
+  <div class="stat-card cost" id="stat-total-value">
+    <span class="stat-label">Portfolio Value</span>
+    <span class="stat-value" style="color: #7c3aed; font-size: 1.6rem;">${{ "{:,.2f}".format(total_value) }}</span>
+    <span class="stat-sub">Total procurement cost</span>
+  </div>
+</section>
+
+<!-- Dashboard Main Grid -->
+<div class="dashboard-grid">
+  <!-- Left Column: Recent Assets & Department Allocation -->
+  <div>
+    <!-- Recent Assets Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Inventory Additions</h2>
+        <a href="{{ url_for('asset_list') }}" class="action-link" style="font-weight: 600;">View All &rarr;</a>
+      </div>
+      <div class="table-responsive" style="border: none; border-radius: 0;">
+        {% if recent_assets %}
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Asset ID</th>
+                <th>Device / Name</th>
+                <th>Category</th>
+                <th>Assigned To</th>
+                <th>Status</th>
+                <th style="text-align: right;">Cost</th>
+                <th style="text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in recent_assets %}
+                <tr>
+                  <td>
+                    <a href="{{ url_for('asset_detail', asset_id=item['asset_id']) }}" class="badge badge-id">
+                      {{ item['asset_id'] }}
+                    </a>
+                  </td>
+                  <td>
+                    <strong>{{ item['name'] }}</strong>
+                    <div style="font-size: 0.78rem; color: #64748b;">{{ item['brand'] }}</div>
+                  </td>
+                  <td>
+                    <span class="badge badge-category">{{ item['category'] }}</span>
+                  </td>
+                  <td>
+                    {% if item['assigned_to'] %}
+                      <div>{{ item['assigned_to'] }}</div>
+                      <div style="font-size: 0.78rem; color: #64748b;">{{ item['department'] or 'Unassigned Dept' }}</div>
+                    {% else %}
+                      <span style="color: #94a3b8; font-style: italic;">Unassigned</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% set status_class = item['status']|lower|replace(' ', '-') %}
+                    <span class="badge badge-{{ status_class }}">{{ item['status'] }}</span>
+                  </td>
+                  <td style="text-align: right; font-weight: 600;">
+                    ${{ "{:,.2f}".format(item['purchase_cost'] or 0.0) }}
+                  </td>
+                  <td style="text-align: right;">
+                    <a href="{{ url_for('asset_detail', asset_id=item['asset_id']) }}" class="action-link" title="View Details">
+                      View
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state">
+            <p>No assets recorded in the database yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Department Distribution Table -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Assets by Department</h2>
+        <span style="font-size: 0.85rem; color: #64748b;">Allocation Breakdown</span>
+      </div>
+      <div class="table-responsive" style="border: none; border-radius: 0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Department</th>
+              <th style="text-align: right;">Asset Count</th>
+              <th style="text-align: right;">Share of Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dept in department_counts %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('asset_list', department=dept['dept_name']) }}" 
+                     style="color: inherit; text-decoration: none; font-weight: 600;" 
+                     title="Filter by {{ dept['dept_name'] }}">
+                    {{ dept['dept_name'] }}
+                  </a>
+                </td>
+                <td style="text-align: right; font-weight: 600;">
+                  {{ dept['count'] }}
+                </td>
+                <td style="text-align: right; color: #64748b;">
+                  {% if total_assets > 0 %}
+                    {{ "{:.1f}%".format((dept['count'] / total_assets) * 100) }}
+                  {% else %}
+                    0%
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Category Distribution & Quick Links -->
+  <div>
+    <!-- Categories Breakdown Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Category Breakdown</h2>
+        <span class="badge badge-neutral">{{ category_counts|length }} types</span>
+      </div>
+      <div class="card-body">
+        <div class="progress-list">
+          {% for cat in category_counts %}
+            {% set pct = ((cat['count'] / total_assets) * 100) if total_assets > 0 else 0 %}
+            <div class="progress-item">
+              <div class="progress-header">
+                <a href="{{ url_for('asset_list', category=cat['category']) }}" style="color: inherit; text-decoration: none; font-weight: 600;">
+                  {{ cat['category'] }}
+                </a>
+                <span><strong>{{ cat['count'] }}</strong> ({{ "{:.0f}%".format(pct) }})</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: {{ pct }}%;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Operations Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Quick Actions</h2>
+      </div>
+      <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('asset_create') }}" class="btn btn-primary" style="justify-content: flex-start;">
+          ➕ Register New Hardware
+        </a>
+        <a href="{{ url_for('asset_list', status='Available') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+          📦 View Available Devices
+        </a>
+        <a href="{{ url_for('asset_list', status='Under Maintenance') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+          🔧 Check Maintenance Queue
+        </a>
+        <a href="{{ url_for('export_csv') }}" class="btn btn-secondary" style="justify-content: flex-start;">
+          📊 Download Complete CSV Audit
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

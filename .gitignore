@@ -1,0 +1,53 @@
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Testing & Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Local SQLite Database Files (initialized dynamically via database.py)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+
+# Editor & IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db

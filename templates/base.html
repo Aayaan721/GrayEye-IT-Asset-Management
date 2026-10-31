@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Grayeye IT Asset Management System - Enterprise Hardware and Inventory Tracking">
+  <title>{% block title %}Grayeye IT - Asset Management{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="{{ url_for('dashboard') }}" class="brand-link" id="brand-logo-link">
+        <div class="brand-icon">GE</div>
+        <div>
+          <span>Grayeye IT</span>
+          <span class="brand-sub">Asset Management System</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li>
+            <a href="{{ url_for('dashboard') }}" 
+               class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+               id="nav-dashboard">
+              📊 Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('asset_list') }}" 
+               class="nav-link {% if request.endpoint == 'asset_list' %}active{% endif %}"
+               id="nav-inventory">
+              💻 Asset Inventory
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('export_csv') }}" 
+               class="nav-link" 
+               title="Export full inventory as CSV"
+               id="nav-export">
+              📥 Export CSV
+            </a>
+          </li>
+          <li>
+            <a href="{{ url_for('asset_create') }}" 
+               class="nav-btn-primary"
+               id="nav-add-asset">
+              <span>+</span> Add Asset
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+    <!-- Flash Messages Container -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container" id="flash-alerts-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }}" role="alert">
+              <span>{{ message }}</span>
+              <button type="button" class="alert-close" aria-label="Close message">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page Specific Body Block -->
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Reusable Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteConfirmModal" aria-hidden="true" role="dialog" aria-labelledby="modalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">Confirm Asset Deletion</h3>
+        <button type="button" class="alert-close" id="modalCloseCross" aria-label="Close dialog">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to permanently delete asset <strong id="modalAssetId">AST-XXXX</strong> (<span id="modalAssetName">Device Name</span>)?</p>
+        <p style="margin-top: 10px; color: #dc2626; font-size: 0.85rem; font-weight: 500;">
+          ⚠️ This action cannot be reversed. The record will be permanently removed from inventory audits.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+        <form id="modalDeleteForm" method="POST" action="" style="display: inline;">
+          <button type="submit" class="btn btn-danger" id="modalConfirmDeleteBtn">Yes, Delete Asset</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Corporate Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div>
+        <strong>Grayeye IT Solutions</strong> &bull; Internal Hardware & Asset Management Portal
+      </div>
+      <div>
+        SQLite &bull; Flask {{ current_year }} &bull; All Rights Reserved
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

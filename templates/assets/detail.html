@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}{{ asset['name'] }} ({{ asset['asset_id'] }}) &bull; Grayeye IT Asset Management{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav style="margin-bottom: 16px; font-size: 0.85rem; color: #64748b;" aria-label="Breadcrumb">
+  <a href="{{ url_for('dashboard') }}" style="color: #64748b; text-decoration: none;">Dashboard</a>
+  <span style="margin: 0 6px;">/</span>
+  <a href="{{ url_for('asset_list') }}" style="color: #64748b; text-decoration: none;">Inventory</a>
+  <span style="margin: 0 6px;">/</span>
+  <strong style="color: #0f172a;">{{ asset['asset_id'] }}</strong>
+</nav>
+
+<!-- Asset Header Banner -->
+<div class="page-header" style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 24px;">
+  <div>
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap;">
+      <span class="badge badge-id" style="font-size: 0.95rem; padding: 4px 12px;">{{ asset['asset_id'] }}</span>
+      <h1 class="page-title" style="margin: 0; font-size: 1.6rem;">{{ asset['name'] }}</h1>
+      {% set status_class = asset['status']|lower|replace(' ', '-') %}
+      <span class="badge badge-{{ status_class }}" style="font-size: 0.85rem; padding: 4px 12px;">
+        {{ asset['status'] }}
+      </span>
+    </div>
+    <p class="page-subtitle" style="font-size: 0.95rem;">
+      {{ asset['brand'] }} &bull; {{ asset['category'] }}
+      {% if asset['serial_number'] %} &bull; S/N: <code>{{ asset['serial_number'] }}</code>{% endif %}
+    </p>
+  </div>
+
+  <div class="header-actions">
+    <a href="{{ url_for('asset_list') }}" class="btn btn-secondary" id="btn-back-inventory">
+      &larr; Back to Inventory
+    </a>
+    <a href="{{ url_for('asset_edit', asset_id=asset['asset_id']) }}" class="btn btn-primary" id="btn-edit-asset">
+      ✏️ Edit Asset
+    </a>
+    <a href="{{ url_for('asset_delete', asset_id=asset['asset_id']) }}" 
+       class="btn btn-danger" 
+       data-delete-trigger="true" 
+       data-asset-id="{{ asset['asset_id'] }}" 
+       data-asset-name="{{ asset['name'] }}"
+       id="btn-delete-asset-detail"
+       style="cursor: pointer;">
+      🗑️ Delete
+    </a>
+  </div>
+</div>
+
+<!-- Detailed Grid Layout -->
+<div class="detail-grid">
+  <!-- Left Side: Main Specifications & Allocation -->
+  <div>
+    <!-- Hardware Details Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Device Specifications</h2>
+      </div>
+      <div class="card-body">
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">Asset Tag ID</span>
+            <span class="info-value"><code>{{ asset['asset_id'] }}</code></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Brand / Manufacturer</span>
+            <span class="info-value">{{ asset['brand'] }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Category</span>
+            <span class="info-value"><span class="badge badge-category">{{ asset['category'] }}</span></span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Serial Number</span>
+            <span class="info-value">
+              {% if asset['serial_number'] %}
+                <code>{{ asset['serial_number'] }}</code>
+              {% else %}
+                <span style="color: #94a3b8; font-weight: normal;">Not recorded</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignment & Custody Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Custody & Department Allocation</h2>
+      </div>
+      <div class="card-body">
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">Assigned Employee</span>
+            <span class="info-value" style="font-size: 1.1rem; color: #1e40af;">
+              {% if asset['assigned_to'] %}
+                👤 {{ asset['assigned_to'] }}
+              {% else %}
+                <span style="color: #059669; font-weight: normal;">📦 In IT Storage (Available)</span>
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Department</span>
+            <span class="info-value">{{ asset['department'] or 'Unassigned' }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">Current Operational Status</span>
+            <span class="info-value">
+              <span class="badge badge-{{ status_class }}">{{ asset['status'] }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes & Observations Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Notes & Maintenance History</h2>
+      </div>
+      <div class="card-body">
+        {% if asset['notes'] %}
+          <div class="notes-box">{{ asset['notes'] }}</div>
+        {% else %}
+          <p style="color: #94a3b8; font-style: italic;">No specific operational notes recorded for this asset.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Financial & Metadata Audit Info -->
+  <div>
+    <!-- Procurement & Financial Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Procurement & Value</h2>
+      </div>
+      <div class="card-body">
+        <div style="margin-bottom: 20px;">
+          <span class="info-label">Purchase Cost</span>
+          <div style="font-size: 1.8rem; font-weight: 700; color: #0f172a; margin-top: 4px;">
+            ${{ "{:,.2f}".format(asset['purchase_cost'] or 0.0) }}
+          </div>
+        </div>
+
+        <div>
+          <span class="info-label">Purchase Date</span>
+          <div style="font-size: 1.05rem; font-weight: 600; color: #334155; margin-top: 4px;">
+            {% if asset['purchase_date'] %}
+              📅 {{ asset['purchase_date'] }}
+            {% else %}
+              <span style="color: #94a3b8; font-weight: normal;">Unknown purchase date</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Metadata Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">System Audit Log</h2>
+      </div>
+      <div class="card-body" style="font-size: 0.88rem; color: #64748b;">
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: 600; color: #334155;">Database Record ID:</div>
+          <div>#{{ asset['id'] }}</div>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div style="font-weight: 600; color: #334155;">First Registered:</div>
+          <div>{{ asset['created_at'] }}</div>
+        </div>
+        <div>
+          <div style="font-weight: 600; color: #334155;">Last Modified:</div>
+          <div>{{ asset['updated_at'] }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Links Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Management Actions</h2>
+      </div>
+      <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="{{ url_for('asset_edit', asset_id=asset['asset_id']) }}" class="btn btn-secondary" style="justify-content: flex-start;">
+          ✏️ Edit Information
+        </a>
+        <a href="{{ url_for('asset_list', category=asset['category']) }}" class="btn btn-secondary" style="justify-content: flex-start;">
+          🔍 View Similar ({{ asset['category'] }})
+        </a>
+        <a href="{{ url_for('asset_delete', asset_id=asset['asset_id']) }}" 
+           class="btn btn-danger" 
+           data-delete-trigger="true" 
+           data-asset-id="{{ asset['asset_id'] }}" 
+           data-asset-name="{{ asset['name'] }}"
+           style="justify-content: flex-start; cursor: pointer;">
+          🗑️ Permanently Delete
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

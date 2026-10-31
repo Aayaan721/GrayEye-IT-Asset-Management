@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Deletion: {{ asset['asset_id'] }} &bull; Grayeye IT Asset Management{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 40px auto;">
+  <div class="card" style="border-top: 4px solid #dc2626;">
+    <div class="card-header" style="background-color: #fef2f2;">
+      <h1 class="card-title" style="color: #991b1b; display: flex; align-items: center; gap: 8px;">
+        ⚠️ Confirm Permanent Asset Deletion
+      </h1>
+    </div>
+
+    <div class="card-body">
+      <p style="font-size: 1rem; margin-bottom: 16px;">
+        Are you sure you want to permanently delete the following asset from the Grayeye IT inventory?
+      </p>
+
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 0.85rem; color: #64748b;">Asset Tag:</span>
+          <strong class="badge badge-id">{{ asset['asset_id'] }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 0.85rem; color: #64748b;">Device / Model:</span>
+          <strong>{{ asset['name'] }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 0.85rem; color: #64748b;">Category & Brand:</span>
+          <span>{{ asset['category'] }} ({{ asset['brand'] }})</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 0.85rem; color: #64748b;">Current Assignee:</span>
+          <span>{{ asset['assigned_to'] or 'Unassigned' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 0.85rem; color: #64748b;">Status:</span>
+          <span class="badge badge-{{ asset['status']|lower|replace(' ', '-') }}">{{ asset['status'] }}</span>
+        </div>
+      </div>
+
+      <div class="alert alert-danger" style="margin-bottom: 24px;">
+        <span><strong>Warning:</strong> This action cannot be undone. All audit records for this asset will be permanently removed from the SQLite database.</span>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px;">
+        <a href="{{ url_for('asset_detail', asset_id=asset['asset_id']) }}" class="btn btn-secondary">
+          Cancel, Keep Asset
+        </a>
+        <form method="POST" action="{{ url_for('asset_delete', asset_id=asset['asset_id']) }}" style="display: inline;">
+          <button type="submit" class="btn btn-danger" id="btn-confirm-delete-page">
+            🗑️ Yes, Permanently Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
