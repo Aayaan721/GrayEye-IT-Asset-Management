@@ -40,7 +40,7 @@
       </div>
 
       <div class="alert alert-danger" style="margin-bottom: 24px;">
-        <span><strong>Warning:</strong> This action cannot be undone. All audit records for this asset will be permanently removed from the SQLite database.</span>
+        <span><strong>Warning:</strong> This action cannot be undone. The asset record will be permanently removed from the database.</span>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 12px;">
@@ -48,6 +48,7 @@
           Cancel, Keep Asset
         </a>
         <form method="POST" action="{{ url_for('asset_delete', asset_id=asset['asset_id']) }}" style="display: inline;">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-danger" id="btn-confirm-delete-page">
             🗑️ Yes, Permanently Delete
           </button>
