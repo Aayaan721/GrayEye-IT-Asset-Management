@@ -2,15 +2,15 @@
 
 **Developer:** Aayaan Kamil  
 **Project:** GrayEye IT Asset Management System  
-**Internship Submission Repository:** [https://github.com/Aayaan721/GrayEye-IT-Asset-Management](https://github.com/Aayaan721/GrayEye-IT-Asset-Management)  
+**Repository:** [https://github.com/Aayaan721/GrayEye-IT-Asset-Management](https://github.com/Aayaan721/GrayEye-IT-Asset-Management)  
 
 ---
 
-## 1. Project Overview & Problem Statement
+## 1. Project Overview
 
-In modern enterprise and corporate environments, tracking IT hardware assets—laptops, workstations, server units, network switches, and peripheral equipment—across departments and employees is critical for operational continuity, financial auditing, and lifecycle governance. Organizations frequently suffer from asset sprawl, unrecorded equipment handoffs, lost hardware during employee offboarding, and inaccurate procurement cost tracking when relying on ad-hoc spreadsheets.
+GrayEye IT Asset Management is a Flask web application built during an internship to track IT hardware records. It provides an inventory dashboard and lets users add, edit, search, filter, and delete assets, with CSV export for reporting. SQLite stores the records locally. The sample records are fictional and intended for demonstration.
 
-The **GrayEye IT Asset Management System** solves these challenges by providing a centralized, lightweight, web-based management platform. Developed during the internship program at GrayEye IT Solutions, this system allows IT administrators and operations teams to monitor hardware inventory throughout its entire lifecycle: from initial acquisition and assignment to active servicing, repair maintenance, and eventual decommissioning.
+This is an internship prototype, not a deployed company inventory service.
 
 ---
 
@@ -21,7 +21,7 @@ The **GrayEye IT Asset Management System** solves these challenges by providing 
 - **Departmental Allocation & Cost Auditing:** Aggregate capital investment metrics and track departmental hardware distribution across Engineering, IT Operations, Product, Finance, and HR.
 - **Rapid Search & Multi-Criteria Filtering:** Enable immediate discovery of hardware via multi-column full-text search, category filtering, and dynamic column sorting.
 - **Data Integrity & Server-Side Validation:** Enforce strict validation rules (unique Asset IDs, regex sanitization, required fields, date formats) to prevent corrupted inventory data.
-- **Audit-Ready Reporting:** Facilitate executive auditing through one-click downloadable CSV inventory exports.
+- **CSV Reporting:** Facilitate inventory review through one-click downloadable CSV inventory exports.
 
 ---
 
@@ -35,7 +35,7 @@ The application is built using a clean **Model-View-Controller (MVC)** architect
 | **Model & Database** | **SQLite3** | Embedded relational database engine utilizing foreign key constraints, column indices (`idx_assets_status`, `idx_assets_category`, `idx_assets_department`, `idx_assets_asset_id`), and parameterized queries to prevent SQL injection. |
 | **View & Templates** | **Jinja2 (HTML5 / Vanilla CSS3)** | Semantic HTML5 structure with custom-engineered CSS variables, responsive grid layouts, card components, and status badges. |
 | **Client-Side Scripts** | **Vanilla JavaScript (ES6+)** | Pure lightweight JavaScript for modal dialog management, alert banner dismissal, and dynamic form input placeholder guidance without third-party libraries. |
-| **Testing Suite** | **Python `unittest`** | Automated test suite comprising 20 comprehensive unit and integration tests verifying all application routes, CRUD flows, edge cases, and validations. |
+| **Testing Suite** | **Python `unittest`** | Automated test suite comprising unit and integration tests verifying all application routes, CRUD flows, edge cases, and validations. |
 
 ---
 
@@ -53,12 +53,12 @@ The application is built using a clean **Model-View-Controller (MVC)** architect
 
 ### 🛠️ Complete Asset CRUD Lifecycle
 - **Create Asset:** Intuitive registration form featuring automatic suggestion for the next sequential Asset ID (`AST-xxxx`). Validates uniqueness, required attributes, non-negative procurement costs, and proper date formatting (`YYYY-MM-DD`).
-- **Read / Detail Inspection:** Comprehensive asset view providing technical specifications, custodian details, department assignment, purchase date, cost, audit timestamps, and operational notes.
-- **Update Asset:** Safe edit workflow updating asset specifications, status transitions, and reassignments while locking the primary Asset ID to preserve audit trails.
+- **Read / Detail Inspection:** Comprehensive asset view providing technical specifications, custodian details, department assignment, purchase date, cost, record timestamps, and operational notes.
+- **Update Asset:** Safe edit workflow updating asset specifications, status transitions, and reassignments while locking the primary Asset ID to keep asset IDs consistent.
 - **Delete Asset:** Dual-layer confirmation protection featuring an interactive modal overlay with fallback to a dedicated confirmation page (`/assets/<id>/delete`) to prevent accidental deletions.
 
 ### 📥 Audit & Reporting
-- **On-Demand CSV Export:** Single-click export (`/export/csv`) generating a clean, timestamped CSV spreadsheet (`grayeye_assets_YYYYMMDD_HHMMSS.csv`) suitable for external accounting and hardware audits.
+- **On-Demand CSV Export:** Single-click export (`/export/csv`) generating a clean, timestamped CSV spreadsheet (`grayeye_assets_YYYYMMDD_HHMMSS.csv`) for inventory review.
 
 ### 🛡️ Defensive Engineering & Validation
 - Parameterized SQL queries throughout to eliminate SQL injection vulnerabilities.
@@ -89,7 +89,7 @@ GrayEye-IT-Asset-Management/
 │   └── index.html               # Welcome portal landing page
 ├── app.py                       # Main Flask application entry point, routes & business logic
 ├── database.py                  # Database connection factory, schema definition & seed data
-├── test_app.py                  # Automated test suite (20 comprehensive test cases)
+├── test_app.py                  # Automated test suite (automated test cases)
 ├── requirements.txt             # Pinned project dependencies
 ├── .gitignore                   # Exclusions for virtual environments, caches, and local DBs
 └── README.md                    # Project documentation, setup guide, and verification report
@@ -149,13 +149,15 @@ Database initialized successfully at: C:\Users\...\asset_management.db
 ```
 
 ### Step 6: Launch the Application
+
+For any non-local use, provide a stable, randomly generated `SECRET_KEY` environment variable. The fallback key is intended only for local development.
 ```powershell
 python app.py
 ```
 *Expected output:*
 ```
  * Serving Flask app 'app'
- * Debug mode: on
+ * Debug mode: off
  * Running on http://127.0.0.1:5000
 Press CTRL+C to quit
 ```
@@ -172,7 +174,7 @@ http://localhost:5000
 
 ---
 
-## 7. Automated Testing & Verification
+## 7. Automated Testing
 
 The project includes a comprehensive automated test suite in `test_app.py` covering route availability, CRUD operations, database persistence, sorting algorithms, input validation, and CSV export.
 
@@ -182,7 +184,7 @@ Ensure your virtual environment is active, then execute:
 python -m unittest -v test_app.py
 ```
 
-### Verified Test Results
+### Initial recorded test results
 ```
 test_01_dashboard_route (test_app.TestAssetManagementSystem.test_01_dashboard_route)
 Verify dashboard loads with 200 and displays summary data. ... ok
@@ -231,20 +233,18 @@ Ran 20 tests in 0.314s
 OK
 ```
 
-**Summary:** 20 tests passed, 0 failures, 0 errors (100% pass rate).
+**Initial submission:** 20 tests passed before the security changes. The updated suite adds two CSRF tests. Run the command above to verify the current version; the original result does not establish a new test run.
 
 ---
 
-## 8. Security & Data Protection Review
+## 8. Security Notes
 
-Prior to repository submission, all codebase files were thoroughly scanned:
-- **Zero Secrets / Tokens:** No API keys, database credentials, passwords, or cloud tokens are present in any source files or templates.
-- **Environment Key Isolation:** Application session secrets default safely for local development and support overriding via the `SECRET_KEY` environment variable.
-- **Sanitized Seed Data:** The database initialization seeds realistic, non-confidential mock hardware records (MacBook Pro, Dell XPS, ThinkPad, Cisco switch) with fictitious names and placeholder serial codes.
-- **Ignored Runtime Artifacts:** The `.gitignore` file guarantees that local virtual environments (`.venv`), compiled bytecode (`__pycache__`), editor settings, and local database binaries are excluded from version control.
+The application uses parameterized SQL queries and validates input. Forms that create, edit, and delete records include a session-based CSRF token. The Flask session secret uses the `SECRET_KEY` environment variable, falling back to a randomly generated key for local development. Set a stable strong key for deployment; the local fallback changes on restart. Debug mode is off by default and can be enabled locally with `FLASK_DEBUG=1`.
+
+This prototype has no authentication or role-based access control. Do not expose it to the public internet or use it for real confidential company records without additional protections and a security review. The SQLite file, local environment, and virtual environment are ignored by Git. The sample assets in `database.py` are fictional.
 
 ---
 
 ## 9. Conclusion
 
-The **GrayEye IT Asset Management System** successfully delivers an end-to-end, production-ready internal hardware tracking platform. By combining a robust Flask/SQLite backend, responsive UI design, automated lifecycle status transitions, and comprehensive test validation, the application fulfills all requirements established for the internship project.
+GrayEye IT Asset Management demonstrates common inventory tasks using Flask and SQLite. Future improvements could include authentication, a change-history log, and deployment configuration.
