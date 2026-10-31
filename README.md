@@ -2,7 +2,7 @@
 
 **Developer:** Aayaan Kamil  
 **Project:** GrayEye IT Asset Management System  
-**Internship Submission Repository:** [https://github.com/Aayaan721/GrayEye-IT-Asset-Management](https://github.com/Aayaan721/GrayEye-IT-Asset-Management)  
+  
 
 ---
 
